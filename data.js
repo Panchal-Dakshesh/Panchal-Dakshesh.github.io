@@ -22,26 +22,32 @@ window.PROFILE = {
   // Each group becomes a processing node; each skill feeds into it.
   skills: {
     streaming: {
+      color: "#0e9f9f",
       note: "Events in, events out, nothing lost. Ideally.",
       items: ["Apache Kafka", "Debezium", "Kafka Connect", "Change Data Capture"],
     },
     storage: {
+      color: "#2f6fde",
       note: "Where the rows live, and where they get fast.",
       items: ["PostgreSQL", "ClickHouse", "SQL", "Replication", "Query Optimization"],
     },
     modeling: {
+      color: "#7c4ddb",
       note: "Shape the data before it shapes you.",
       items: ["dbt", "Avro", "Protobuf", "ETL", "Data Pipelines"],
     },
     languages: {
+      color: "#d9731f",
       note: "Whatever gets the job done without a framework doing it for me.",
       items: ["Ruby / Rails", "Python", "Go", "Lua"],
     },
     systems: {
+      color: "#cf3a7a",
       note: "Boxes, arrows, and what happens when an arrow breaks.",
       items: ["Systems Design", "Distributed Systems", "Microservices", "REST APIs", "Docker"],
     },
     people: {
+      color: "#2f9a4c",
       note: "The hardest distributed system.",
       items: ["Stakeholder Management"],
     },

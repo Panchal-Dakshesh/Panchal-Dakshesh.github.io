@@ -18,16 +18,16 @@
   const current = P.career[P.career.length - 1];
   const core = addNode({ id: "core", kind: "core", layer: 2, label: P.handle, sub: P.role.toLowerCase() });
   Object.entries(P.skills).forEach(([g, def]) => {
-    addNode({ id: "g:" + g, kind: "group", layer: 1, label: "▸ " + g, group: g, data: def });
+    addNode({ id: "g:" + g, kind: "group", layer: 1, label: g, group: g, data: def, color: def.color });
     def.items.forEach((s) => {
-      addNode({ id: "s:" + s, kind: "skill", layer: 0, label: s, group: g });
+      addNode({ id: "s:" + s, kind: "skill", layer: 0, label: s, group: g, color: def.color });
       addEdge("s:" + s, "g:" + g);
     });
     addEdge("g:" + g, "core");
   });
-  addNode({ id: "o:career", kind: "out", layer: 3, label: "career.log", status: "career" });
-  P.projects.forEach((p) => addNode({ id: "o:" + p.repo, kind: "out", layer: 3, label: p.repo, status: p.status, data: p }));
-  addNode({ id: "o:contact", kind: "out", layer: 3, label: "contact", status: "contact" });
+  addNode({ id: "o:career", kind: "out", layer: 3, label: "career.log", sub: `${P.career.length} commits`, status: "career" });
+  P.projects.forEach((p) => addNode({ id: "o:" + p.repo, kind: "out", layer: 3, label: p.repo, sub: `${p.lang.toLowerCase()} · ${p.status}`, status: p.status, data: p }));
+  addNode({ id: "o:contact", kind: "out", layer: 3, label: "contact", sub: "say hi", status: "contact" });
   nodes.filter((n) => n.layer === 3).forEach((n) => addEdge("core", n.id));
 
   const layers = [0, 1, 2, 3].map((l) => nodes.filter((n) => n.layer === l));
@@ -40,10 +40,10 @@
   }
   function sizeNodes() {
     nodes.forEach((n) => {
-      if (n.kind === "core") { n.w = Math.max(textW(n.label, 14, 700), textW(n.sub, 11)) + 40; n.h = 52; }
-      else if (n.kind === "group") { n.w = textW(n.label, 12, 700) + 24; n.h = 30; }
-      else if (n.kind === "out") { n.w = textW(n.label) + 34; n.h = 28; }
-      else { n.w = textW(n.label) + 22; n.h = 24; }
+      if (n.kind === "core") { n.w = 124; n.h = 124; }
+      else if (n.kind === "group") { n.w = textW(n.label, 12, 700) + textW(String(n.data.items.length)) + 34; n.h = 32; }
+      else if (n.kind === "out") { n.w = Math.max(textW(n.label), textW(n.sub, 10.5)) + 38; n.h = 42; }
+      else { n.w = textW(n.label) + 32; n.h = 26; }
     });
   }
 
@@ -52,7 +52,8 @@
   function layout() {
     sizeNodes();
     W = stage.clientWidth;
-    portrait = W < 760;
+    portrait = W < 980;
+    svg.classList.toggle("portrait", portrait);
     if (portrait) layoutPortrait(); else layoutLandscape();
   }
 
@@ -61,7 +62,7 @@
     svg.style.height = "100%";
     const top = 20, bottom = 44, avail = H - top - bottom;
     const L0 = layers[0];
-    const rowH = 30;
+    const rowH = 32;
     const perCol = Math.max(6, Math.floor(avail / rowH));
     const cols = Math.ceil(L0.length / perCol);
     const rows = Math.ceil(L0.length / cols);
@@ -83,10 +84,10 @@
     // groups sit at the average height of their skills, then get de-overlapped
     const G = layers[1];
     G.forEach((g) => { const ys = g.in.map((e) => e.from.ty); g.ty = ys.reduce((a, b) => a + b, 0) / ys.length; g.tx = x1; });
-    spread(G, "ty", 40, top + 15, H - bottom - 15);
+    spread(G, "ty", 44, top + 15, H - bottom - 15);
     core.tx = x2; core.ty = top + avail / 2;
     const O = layers[3];
-    const oh = 44;
+    const oh = 54;
     O.forEach((n, i) => { n.tx = x3; n.ty = top + avail / 2 + (i - (O.length - 1) / 2) * oh; });
   }
 
@@ -100,7 +101,7 @@
   }
 
   function layoutPortrait() {
-    const pad = 16, gapX = 8, rowH = 34, band = 64;
+    const pad = 16, gapX = 8, rowH = 36, band = 70;
     let y = 30;
     const flow = (list) => {
       let rows = [[]], rw = 0;
@@ -119,9 +120,11 @@
     };
     flow(layers[0]);
     flow(layers[1]);
-    core.tx = (W - core.w) / 2; core.ty = y + 10; y += 52 + band - 14;
+    core.tx = (W - core.w) / 2; core.ty = y + 30; y += core.h + band - 20;
     flow(layers[3]);
     H = y;
+    const room = stage.clientHeight;
+    if (window.innerWidth > 900 && H < room) { const dy = (room - H) / 2; nodes.forEach((n) => (n.ty += dy)); H = room; }
     svg.style.height = H + "px";
   }
 
@@ -138,18 +141,39 @@
     return e;
   }
 
-  edges.forEach((e) => { e.el = el("path", { class: "edge" }, gEdges); });
+  sizeNodes();
+  edges.forEach((e) => {
+    const c = e.from.color || e.to.color;
+    const isOut = e.from.kind === "core";
+    const w = e.from.kind === "group" ? 1.4 + e.from.data.items.length * 0.7 : isOut ? 1.2 : 1.3;
+    e.el = el("path", { class: "edge" + (isOut ? " out" : "") + (e.from.kind === "skill" ? " s2g" : ""), "stroke-width": w }, gEdges);
+    if (c) e.el.style.setProperty("--c", c);
+  });
   nodes.forEach((n) => {
     const cls = ["node", "k-" + n.kind];
     if (n.status) cls.push("s-" + n.status);
     n.el = el("g", { class: cls.join(" "), tabindex: "-1", "data-id": n.id }, gNodes);
-    n.rect = el("rect", { rx: n.kind === "skill" ? 12 : 6 }, n.el);
+    if (n.color) n.el.style.setProperty("--c", n.color);
     if (n.kind === "core") {
-      n.t1 = el("text", { "text-anchor": "middle" }, n.el); n.t1.textContent = n.label;
-      n.t2 = el("text", { "text-anchor": "middle", class: "sub" }, n.el); n.t2.textContent = n.sub;
+      const r = n.w / 2;
+      el("circle", { class: "halo", cx: r, cy: 0, r }, n.el);
+      el("circle", { class: "spin", cx: r, cy: 0, r: r - 7 }, n.el);
+      el("circle", { class: "disc", cx: r, cy: 0, r: r - 14 }, n.el);
+      n.t1 = el("text", { "text-anchor": "middle", x: r, y: -1 }, n.el); n.t1.textContent = n.label;
+      n.t2 = el("text", { "text-anchor": "middle", class: "sub", x: r, y: 15 }, n.el); n.t2.textContent = n.sub;
+      return;
+    }
+    n.rect = el("rect", { rx: n.kind === "skill" ? 13 : n.kind === "group" ? 8 : 8 }, n.el);
+    if (n.kind === "skill") {
+      el("circle", { class: "dotc", cx: 13, cy: 0, r: 3.5 }, n.el);
+      n.t1 = el("text", { x: 23, y: 4 }, n.el); n.t1.textContent = n.label;
+    } else if (n.kind === "group") {
+      n.t1 = el("text", { x: 12, y: 4 }, n.el); n.t1.textContent = n.label;
+      n.t2 = el("text", { class: "count", "text-anchor": "end", y: 4 }, n.el); n.t2.textContent = n.data.items.length;
     } else {
-      if (n.kind === "out") el("circle", { class: "dotc", cx: 13, cy: 0, r: 3.5 }, n.el);
-      n.t1 = el("text", {}, n.el); n.t1.textContent = n.label;
+      el("circle", { class: "dotc", cx: 15, cy: 0, r: 4 }, n.el);
+      n.t1 = el("text", { x: 27, y: -2 }, n.el); n.t1.textContent = n.label;
+      n.t2 = el("text", { class: "sub", x: 27, y: 12 }, n.el); n.t2.textContent = n.sub;
     }
   });
 
@@ -157,14 +181,10 @@
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     nodes.forEach((n) => {
       n.el.setAttribute("transform", `translate(${n.x.toFixed(1)},${n.y.toFixed(1)})`);
+      if (!n.rect) return;
       n.rect.setAttribute("x", 0); n.rect.setAttribute("y", -n.h / 2);
       n.rect.setAttribute("width", n.w); n.rect.setAttribute("height", n.h);
-      if (n.kind === "core") {
-        n.t1.setAttribute("x", n.w / 2); n.t1.setAttribute("y", -3);
-        n.t2.setAttribute("x", n.w / 2); n.t2.setAttribute("y", 14);
-      } else {
-        n.t1.setAttribute("x", n.kind === "out" ? 24 : 11); n.t1.setAttribute("y", 4);
-      }
+      if (n.kind === "group") n.t2.setAttribute("x", n.w - 11);
     });
     edges.forEach((e) => {
       const a = e.from, b = e.to;
@@ -225,9 +245,10 @@
     const e1 = s.out[0], e2 = e1.to.out[0];
     const outs = core.out;
     const e3 = outs[Math.floor(Math.random() * outs.length)];
-    const c = pool.pop() || el("circle", { class: "packet", r: 2.6 }, gPackets);
+    const c = pool.pop() || el("circle", { class: "packet", r: 3 }, gPackets);
     c.style.display = "";
-    packets.push({ chain: [e1, e2, e3], i: 0, d: 0, c, v: 0.11 + Math.random() * 0.07 });
+    c.style.setProperty("--c", s.color);
+    packets.push({ chain: portrait ? [e2, e3] : [e1, e2, e3], i: 0, d: 0, c, v: 0.11 + Math.random() * 0.07 });
   }
   function loop(now) {
     if (!running) return;
@@ -274,7 +295,7 @@
     if (sel) sel.el.classList.remove("sel");
     sel = n;
     n.el.classList.add("sel");
-    $("#sel").textContent = n.label.replace("▸ ", "");
+    $("#sel").textContent = n.label;
     const L = layers[n.layer];
     $("#pos").textContent = `${n.layer + 1}:${L.indexOf(n) + 1}`;
     highlight(n);
@@ -295,7 +316,7 @@
 
   // ---------------------------------------------------------------- floating window content
   const sha = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0).toString(16).padStart(8, "0").slice(0, 7); };
-  const pill = (id, text) => `<button type="button" class="pill" data-go="${esc(id)}">${esc(text)}</button>`;
+  const pill = (id, text) => { const c = byId[id] && byId[id].color; return `<button type="button" class="pill" data-go="${esc(id)}"${c ? ` style="--c:${c}"` : ""}>${esc(text)}</button>`; };
   const years = new Date().getFullYear() - parseInt(P.career[0].ts, 10);
 
   function content(n) {
@@ -313,7 +334,7 @@
     if (n.kind === "group") {
       return [
         `transforms/${n.group}.sql`,
-        `<h2>${esc(n.group)}</h2>
+        `<h2><span class="swatch" style="--c:${n.color}"></span>${esc(n.group)}</h2>
         <div class="lede">${esc(n.data.note)}</div>
         <h3>sources (${n.data.items.length})</h3><div class="pills">${n.data.items.map((s) => pill("s:" + s, s)).join("")}</div>
         <h3>sink</h3><div class="pills">${pill("core", P.handle)}</div>`,
@@ -496,7 +517,19 @@
     rz = setTimeout(() => { layout(); settle(); }, 120);
   });
 
+  function fillHero() {
+    $("#role").textContent = `${P.role.toLowerCase()} · ${current.role} @ ${current.company}`;
+    $("#intro").textContent = P.intro;
+    $("#legend").innerHTML = layers[1].map((g) => `<button type="button" data-open="${esc(g.id)}" style="--c:${g.color}"><i></i><span>${esc(g.group)}</span><small>${g.data.items.length}</small></button>`).join("");
+    document.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => select(byId[b.dataset.open], { show: true })));
+    document.querySelectorAll(".legend button").forEach((b) => {
+      b.addEventListener("mouseenter", () => highlight(byId[b.dataset.open]));
+      b.addEventListener("mouseleave", () => highlight(open ? sel : null));
+    });
+  }
+
   function boot() {
+    fillHero();
     layout();
     const finish = () => {
       settle();
