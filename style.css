@@ -100,7 +100,8 @@ button { font: inherit; }
   cursor: pointer;
   transition: border-color .15s, background .15s;
 }
-.btn:hover { border-color: var(--fg); }
+.btn:hover { border-color: var(--fg); text-decoration: none; }
+a.btn { display: inline-block; }
 .btn.primary { background: var(--fg); border-color: var(--fg); color: #fff; }
 .btn.primary:hover { background: #000; }
 
@@ -178,6 +179,8 @@ kbd {
 .node.k-out.s-archived .dotc { fill: var(--faint); }
 .node.k-out.s-career .dotc { fill: var(--blue); }
 .node.k-out.s-contact .dotc { fill: var(--purple); }
+.node.k-out.s-cases .dotc { fill: #cf3a7a; }
+.node.k-out.s-notes .dotc { fill: #2f6fde; }
 
 svg.focus .node:not(.hot) { opacity: .22; }
 svg.focus .edge:not(.hot) { opacity: .12; }

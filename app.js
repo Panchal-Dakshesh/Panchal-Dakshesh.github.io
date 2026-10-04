@@ -27,6 +27,10 @@
   });
   addNode({ id: "o:career", kind: "out", layer: 3, label: "career.log", sub: `${P.career.length} commits`, status: "career" });
   P.projects.forEach((p) => addNode({ id: "o:" + p.repo, kind: "out", layer: 3, label: p.repo, sub: `${p.lang.toLowerCase()} · ${p.status}`, status: p.status, data: p }));
+  const POSTS = (window.POSTS || []).filter((p) => !p.draft);
+  const nCase = POSTS.filter((p) => p.kind === "case").length, nNote = POSTS.filter((p) => p.kind === "note").length;
+  addNode({ id: "o:cases", kind: "out", layer: 3, label: "case-studies", sub: nCase ? `${nCase} write-up${nCase > 1 ? "s" : ""}` : "first one soon", status: "cases" });
+  addNode({ id: "o:notes", kind: "out", layer: 3, label: "notes", sub: nNote ? `${nNote} post${nNote > 1 ? "s" : ""}` : "first one soon", status: "notes" });
   addNode({ id: "o:contact", kind: "out", layer: 3, label: "contact", sub: "say hi", status: "contact" });
   nodes.filter((n) => n.layer === 3).forEach((n) => addEdge("core", n.id));
 
@@ -360,6 +364,23 @@
         <ul class="log">${log.map((e, i) => `<li><span class="sha">${sha(e.ts + e.role)}</span><span class="ts">${esc(e.ts)}</span><span>${i === 0 ? '<span class="head">HEAD</span> ' : ""}${esc(e.role)} <span class="co">@ ${esc(e.company)}</span></span></li>`).join("")}</ul>`,
       ];
     }
+    if (n.status === "cases" || n.status === "notes") {
+      const k = n.status === "cases" ? "case" : "note";
+      const items = POSTS.filter((p) => p.kind === k);
+      const link = (p) => p.url || `post.html?p=${encodeURIComponent(p.slug)}`;
+      const blurb = k === "case"
+        ? "Problems I hit in production and how I got out of them. The dead ends included."
+        : "Whatever I'm studying, written down until I actually understand it.";
+      return [
+        `writing/${n.label}`,
+        `<h2>${k === "case" ? "Case studies" : "Notes"}</h2>
+        <div class="lede">${blurb}</div>
+        ${items.length
+          ? `<ul class="log">${items.slice(0, 6).map((p) => `<li><span class="ts">${esc(p.date)}</span><span></span><span><a href="${esc(link(p))}"${p.url ? ' target="_blank" rel="noopener"' : ""}>${esc(p.title)}</a></span></li>`).join("")}</ul>`
+          : '<p class="meta">nothing published yet. the first one is being written. probably over-engineered.</p>'}
+        <h3>all writing</h3><a href="writing.html${k === "case" ? "?kind=case" : "?kind=note"}">open writing →</a>`,
+      ];
+    }
     if (n.status === "contact") {
       return [
         "contact",
@@ -477,6 +498,10 @@
     about: () => select(core, { show: true }),
     whoami: () => select(core, { show: true }),
     career: () => select(byId["o:career"], { show: true }),
+    cases: () => select(byId["o:cases"], { show: true }),
+    notes: () => select(byId["o:notes"], { show: true }),
+    writing: () => { location.href = "writing.html"; },
+    blog: () => { location.href = "writing.html"; },
     log: () => select(byId["o:career"], { show: true }),
     contact: () => select(byId["o:contact"], { show: true }),
     hire: () => { select(byId["o:contact"], { show: true }); msg("sensible. the contact node is open."); },
@@ -502,7 +527,7 @@
   const _content = content;
   content = function (n) {
     if (n.kind === "help") {
-      const rows = [["h j k l", "move between nodes"], ["↵ / o", "open node"], ["esc / q", "close"], ["g / G", "first / last node"], ["/", "search skills"], [":about", "the README"], [":career", "git log"], [":projects", "outputs"], [":contact", "say hi"], [":checkhealth", "graph stats"], [":q", "try it"]];
+      const rows = [["h j k l", "move between nodes"], ["↵ / o", "open node"], ["esc / q", "close"], ["g / G", "first / last node"], ["/", "search skills"], [":about", "the README"], [":career", "git log"], [":projects", "outputs"], [":cases", "case studies"], [":notes", "study notes"], [":writing", "all writing"], [":contact", "say hi"], [":checkhealth", "graph stats"], [":q", "try it"]];
       return ["help.txt", `<h2>help</h2><div class="kv">${rows.map(([k, d]) => `<b>${esc(k)}</b>${esc(d)}`).join("<br>")}</div>`];
     }
     return _content(n);

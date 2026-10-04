@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Writing · Dakshesh Panchal</title>
+  <meta name="description" content="Case studies of problems I hit in data infrastructure and how I solved them, plus study notes.">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='3' cy='3' r='2' fill='%230e9f9f'/><circle cx='3' cy='13' r='2' fill='%237c4ddb'/><circle cx='12' cy='8' r='3.5' fill='%231f2328'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="writing.css">
+</head>
+<body>
+  <header class="bar">
+    <nav class="crumbs"><a href="./">dakshesh.dag</a><span class="sep">/</span><b>writing</b></nav>
+    <a href="./">← graph</a>
+  </header>
+
+  <main class="wrap">
+    <div class="kicker">~/writing</div>
+    <h1>Things that broke, and things I learned.</h1>
+    <p class="lede">Case studies are problems I hit and how I got out of them. Notes are whatever I'm studying, written down so I actually understand it.</p>
+
+    <div class="tabs" role="group" aria-label="Filter">
+      <button type="button" class="tab" data-kind="all">all<i id="n-all"></i></button>
+      <button type="button" class="tab" data-kind="case">case studies<i id="n-case"></i></button>
+      <button type="button" class="tab" data-kind="note">notes<i id="n-note"></i></button>
+    </div>
+    <ul class="list" id="list"></ul>
+  </main>
+
+  <script src="posts.js"></script>
+  <script src="writing.js"></script>
+</body>
+</html>
